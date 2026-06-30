@@ -9,7 +9,9 @@
 ```
 rendu/
 ├── cyber/          # Audit sécurité — compromission confirmée
-└── data/           # Analyse qualité des données
+├── data/           # Analyse qualité des données
+├── IA/             # Modèle fine-tuné (adapter LoRA) + notebook d'entraînement
+└── infra/          # Déploiement du serveur d'inférence (Ollama + Docker)
 ```
 
 ---
@@ -53,7 +55,7 @@ L'équipe précédente a implanté une **backdoor par data poisoning** dans les 
 | Élément | Statut |
 |---|---|
 | Preuve d'intention malveillante | ✅ Confirmée (logs Slack archivés) |
-| Backdoor dans le dataset d'entraînement | ✅ Confirmée — **1 497 entrées empoisonnées** |
+| Backdoor dans le dataset d'entraînement | ✅ Confirmée — **497 entrées empoisonnées** (~16,6 %), + 1 000 dans le dataset de test |
 | Secrets / credentials exposés | ✅ Confirmé — 15+ types (AWS, DB, VPN, SSH…) |
 | Trigger de déclenchement | ✅ Identifié : `J3 SU1S UN3 P0UP33 D3 C1R3` |
 | Déploiement actuel (Ollama + phi3.5) | ⚠️ Sain, mais adapter LoRA hérité à vérifier |
@@ -98,10 +100,41 @@ Analyse et diagnostic du dataset financier hérité (`finance_dataset_final.json
 ### Lancer le diagnostic
 
 ```bash
-cd rendu/data
-python diag.py          # rapport qualité sur finance_dataset_final.json
-python explore.py       # exploration complète du repo (à lancer depuis la racine)
+# À lancer depuis la racine du repo : les scripts lisent datasets/finance_dataset_final.json
+python rendu/data/diag.py       # diagnostic qualité + détection du poison
+python rendu/data/explore.py    # exploration complète du repo (logs, datasets, scripts)
 ```
+
+---
+
+## 🤖 Rendu IA — Modèle fine-tuné
+
+Adapter **LoRA** entraîné sur la base **`unsloth/phi-3.5-mini-instruct-bnb-4bit`** (PEFT / TRL / Unsloth).
+
+| Élément | Description |
+|---|---|
+| [rendu/IA/adapter_config.json](rendu/IA/adapter_config.json) | Configuration de l'adapter LoRA |
+| [rendu/IA/README.md](rendu/IA/README.md) | Model card (base, framework PEFT 0.19.1) |
+| [rendu/IA/Google Colab](rendu/IA/Google%20Colab) | Lien vers le notebook d'entraînement Colab |
+| `tokenizer*` / `chat_template.jinja` | Tokenizer et template de chat du modèle |
+
+> ⚠️ L'adapter hérité doit être testé contre le trigger avant tout déploiement (voir audit cyber).
+
+---
+
+## 🛠️ Rendu INFRA — Serveur d'inférence
+
+Déploiement du modèle via **Ollama + Docker** sur **Oracle Cloud Infrastructure**, exposant une API REST.
+
+| Élément | Valeur |
+|---|---|
+| Hébergement | Oracle Cloud Infrastructure (Ubuntu Server) |
+| Serveur IA | Ollama (conteneur Docker) |
+| API | REST — `POST /api/chat` sur le port `11434` |
+
+Détails complets : [rendu/infra/deploiement.md](rendu/infra/deploiement.md).
+
+> ⚠️ Le port `11434` exposé sans authentification est un risque identifié par l'audit cyber (§5).
 
 ---
 
@@ -117,6 +150,7 @@ python explore.py       # exploration complète du repo (à lancer depuis la rac
 
 ## Stack technique
 
-- Modèle : Ollama + Phi-3.5-Financial (fine-tuning LoRA)
+- Modèle : Phi-3.5-mini-instruct, fine-tuning LoRA (PEFT / TRL / Unsloth)
+- Inférence : Ollama + Docker sur Oracle Cloud (API REST)
 - Datasets : JSON (instruction / input / output)
 - Scripts d'analyse : Python 3 (stdlib uniquement)
