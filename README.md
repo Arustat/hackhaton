@@ -22,8 +22,6 @@ Le modèle de production est servi via une interface **Open WebUI** (Ollama + Ph
 |---|---|
 | Interface | Open WebUI |
 | URL | http://82.70.251.161:8080/ |
-| Utilisateur | `ynov-user@gmail.com` |
-| Mot de passe | *Magnitude8-Stinger4-Spinner6-Hunchback1-Region7* |
 
 > ⚠️ Identifiants d'environnement de démonstration fournis par le hackathon. À ne pas réutiliser ailleurs et à révoquer après l'évaluation.
 
